@@ -1,7 +1,7 @@
-from sklearn.svm import SVR
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from ..config import TRAINING_CONFIG
+from sklearn.pipeline import Pipeline
+from ..config import MODEL_CONFIG
+from sklearn.svm import SVR
 
 def build_svr_model(kernel='rbf', C=1.0, epsilon=0.1, gamma='scale', **kwargs):
     """
@@ -14,13 +14,13 @@ def build_svr_model(kernel='rbf', C=1.0, epsilon=0.1, gamma='scale', **kwargs):
         gamma: Kernel coefficient for 'rbf', 'poly' and 'sigmoid'
         **kwargs: Additional SVR parameters
     """
-    
-    # Build SVR with specified parameters
+    # Use config defaults unless overridden
+    svr_config = MODEL_CONFIG.get('svr', {})
     svr_params = {
-        'kernel': kernel,
-        'C': C,
-        'epsilon': epsilon,
-        'gamma': gamma,
+        'kernel': kwargs.pop('kernel', kernel if kernel != 'rbf' else svr_config.get('kernel', 'rbf')),
+        'C': kwargs.pop('C', C if C != 1.0 else svr_config.get('C', 1.0)),
+        'epsilon': kwargs.pop('epsilon', epsilon if epsilon != 0.1 else svr_config.get('epsilon', 0.1)),
+        'gamma': kwargs.pop('gamma', gamma if gamma != 'scale' else svr_config.get('gamma', 'scale')),
         **kwargs
     }
     
@@ -30,17 +30,5 @@ def build_svr_model(kernel='rbf', C=1.0, epsilon=0.1, gamma='scale', **kwargs):
         ('svr', SVR(**svr_params))
     ])
 
-def build_svr_optimized(**kwargs):
-    """
-    Build SVR with optimized default parameters for position estimation
-    """
-    # Use weight decay from training config as inverse of C parameter
-    C = 1.0 / TRAINING_CONFIG['weight_decay'] if TRAINING_CONFIG['weight_decay'] > 0 else 100.0
-    
-    return build_svr_model(
-        kernel='rbf',
-        C=C,           # Use C derived from weight decay
-        epsilon=0.01,  # Lower epsilon for better fit
-        gamma='auto',  # Auto-select gamma
-        **kwargs
-    )
+def get_svr_model(**kwargs):
+    return build_svr_model(**kwargs)

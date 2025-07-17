@@ -1,6 +1,5 @@
 from src.utils.visualizations import plot_actual_vs_estimated, plot_rmse_comparison
-from src.config import DATA_CONFIG, ANALYSIS_CONFIG, TRAINING_OPTIONS
-from src.training.train_sklearn import train_all_models_enhanced
+from src.config import DATA_CONFIG, ANALYSIS_CONFIG, TRAINING_OPTIONS, LINEAR_MODEL_TYPE
 from src.training.train_lstm import train_lstm_on_all
 from src.training.train_gru import train_gru_on_all
 from src.training.train_cnn import train_cnn_on_all
@@ -12,6 +11,9 @@ import warnings
 import torch
 import time
 import os
+from src.training.train_linear import main as train_linear_main
+from src.training.train_svr import main as train_svr_main
+import joblib
 
 warnings.filterwarnings('ignore')
 
@@ -234,44 +236,53 @@ def run_analysis():
         } if TRAINING_OPTIONS['plot_training_history'] else None
     })
     
-    # Train sklearn models
-    sklearn_results = train_all_models_enhanced(
-        DATA_CONFIG['processed_dir']
-    )
-    
-    # Save sklearn models and plot actual vs estimated
-    for result in sklearn_results:
-        if result['success']:
-            model_save_path = f'results/models/{result["name"]}_model.pkl'
-            pd.to_pickle({
-                'model_type': result['name'],
-                'timestamp': timestamp,
-                'metrics': result['metrics'],
-                'predictions': {
-                    'actual': result['y_test'],
-                    'predicted': result['y_pred']
-                }
-            }, model_save_path)
-            print(f"Saved {result['name']} model to {model_save_path}")
-            
-            # Plot actual vs estimated for sklearn models
-            if TRAINING_OPTIONS['save_predictions']:
-                plot_actual_vs_estimated(
-                    result['y_test'],
-                    result['y_pred'],
-                    model_name=result['name'],
-                    save_dir="results/plots"
-                )
-            
-            all_model_results.append({
-                'name': result['name'],
-                'type': 'sklearn',
-                'metrics': result['metrics'],
-                'predictions': {
-                    'y_test': result['y_test'],
-                    'y_pred': result['y_pred']
-                } if TRAINING_OPTIONS['save_predictions'] else None
-            })
+    # Train and evaluate Linear model
+    print("\nTraining Linear Regression model...")
+    train_linear_main(model_type=LINEAR_MODEL_TYPE)
+    # Load linear model predictions and metrics
+    linear_model_path = 'results/models/linear_model.pkl'
+    if os.path.exists(linear_model_path):
+        linear_model_data = joblib.load(linear_model_path)
+        if 'predictions' in linear_model_data:
+            plot_actual_vs_estimated(
+                linear_model_data['predictions']['actual'],
+                linear_model_data['predictions']['predicted'],
+                model_name='Linear',
+                save_dir="results/plots"
+            )
+        all_model_results.append({
+            'name': 'linear',
+            'type': 'sklearn',
+            'metrics': linear_model_data.get('metrics', {}),
+            'predictions': {
+                'y_test': linear_model_data['predictions']['actual'],
+                'y_pred': linear_model_data['predictions']['predicted']
+            } if 'predictions' in linear_model_data else None
+        })
+
+    # Train and evaluate SVR model
+    print("\nTraining SVR model...")
+    train_svr_main()
+    # Load SVR model predictions and metrics
+    svr_model_path = 'results/models/svr_model.pkl'
+    if os.path.exists(svr_model_path):
+        svr_model_data = joblib.load(svr_model_path)
+        if 'predictions' in svr_model_data:
+            plot_actual_vs_estimated(
+                svr_model_data['predictions']['actual'],
+                svr_model_data['predictions']['predicted'],
+                model_name='SVR',
+                save_dir="results/plots"
+            )
+        all_model_results.append({
+            'name': 'svr',
+            'type': 'sklearn',
+            'metrics': svr_model_data.get('metrics', {}),
+            'predictions': {
+                'y_test': svr_model_data['predictions']['actual'],
+                'y_pred': svr_model_data['predictions']['predicted']
+            } if 'predictions' in svr_model_data else None
+        })
     
     # Create RMSE comparison plot
     plot_rmse_comparison(all_model_results, save_dir="results/plots")

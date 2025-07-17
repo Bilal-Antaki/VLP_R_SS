@@ -1,6 +1,6 @@
 # src/models/model_registry.py
 from .linear import build_linear_model
-from .svr import build_svr_optimized
+from .svr import build_svr_model
 from .lstm import build_lstm_model
 from .gru import build_gru_model
 from .cnn import build_cnn_model
@@ -10,7 +10,7 @@ MODEL_REGISTRY = {
     "linear": build_linear_model,
     
     # SVR models
-    "svr": build_svr_optimized,
+    "svr": build_svr_model,
     
     # Neural network models
     "lstm": build_lstm_model,

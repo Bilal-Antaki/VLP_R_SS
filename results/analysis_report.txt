@@ -4,11 +4,11 @@ POSITION ESTIMATION ANALYSIS REPORT
 Model Performance Summary:
 ----------------------------------------
 
+Model: gru (RNN)
+  RMSE: 276.1284
+
 Model: lstm (RNN)
   RMSE: 292.6769
-
-Model: gru (RNN)
-  RMSE: 399.0907
 
 Model: cnn (CNN)
   RMSE: 411.0187
@@ -19,6 +19,6 @@ Model: linear (sklearn)
   R2: 0.3059
 
 Model: svr (sklearn)
-  RMSE: 424.2443
-  MAE: 309.9371
-  R2: 0.2732
+  RMSE: 495.8291
+  MAE: 370.6470
+  R2: 0.0072

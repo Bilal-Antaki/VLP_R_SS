@@ -3,6 +3,8 @@ import os
 import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler
+from ..config import DATA_CONFIG
+from sklearn.model_selection import train_test_split
 
 def load_cir_data(processed_dir: str, filter_keyword: str = None) -> pd.DataFrame:
     all_data = []
@@ -121,3 +123,16 @@ def scale_and_sequenceap(df, seq_len=10, test_size=0.2):
         x_scaler,
         y_scaler
     ) 
+
+def load_data(test_size=0.2, random_state=42):
+    """
+    Loads the main input file, splits into train/test, and returns X_train, X_test, y_train, y_test.
+    Uses features ['PL', 'RMS'] and target 'r' as in config.
+    """
+    df = pd.read_csv(DATA_CONFIG['input_file'])
+    X = df[['PL', 'RMS']]
+    y = df[DATA_CONFIG['target_column']]
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state
+    )
+    return X_train, X_test, y_train, y_test 
