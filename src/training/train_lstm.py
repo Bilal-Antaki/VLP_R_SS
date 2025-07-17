@@ -1,16 +1,14 @@
-import sys
-import os
-# Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-
-import torch
+from src.data.data_loader import load_cir_data, scale_and_sequenceap
+from torch.utils.data import DataLoader, TensorDataset
+from src.config import MODEL_CONFIG, DATA_CONFIG
+from src.models.model_registry import get_model
 import torch.nn as nn
 import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
-from src.models.model_registry import get_model
-from src.config import MODEL_CONFIG, DATA_CONFIG
-from src.data.data_loader import load_cir_data, scale_and_sequenceap
 import random
+import torch
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 def train_lstm_on_all(processed_dir):
     """Train LSTM model on all available data"""

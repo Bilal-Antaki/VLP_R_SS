@@ -1,11 +1,11 @@
-import torch
+from src.data.data_loader import load_cir_data, scale_and_sequenceap
+from torch.utils.data import DataLoader, TensorDataset
+from src.config import MODEL_CONFIG, TRAINING_CONFIG
+from src.models.cnn import CNNRegressor
 import torch.nn as nn
 import numpy as np
-from torch.utils.data import DataLoader, TensorDataset
-from src.models.cnn import CNNRegressor
-from src.config import MODEL_CONFIG, TRAINING_CONFIG
-from src.data.data_loader import load_cir_data, scale_and_sequenceap
 import random
+import torch
 
 def train_cnn_on_all(processed_dir):
     """Train CNN model on all available data"""

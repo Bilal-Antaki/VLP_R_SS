@@ -1,15 +1,14 @@
-import sys
-import os
-# Add the project root to the Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
 from src.data.data_loader import load_cir_data, scale_and_sequenceap
 from src.config import DATA_CONFIG, MODEL_CONFIG, TRAINING_CONFIG
+from torch.utils.data import DataLoader, TensorDataset
+import torch.nn as nn
 import numpy as np
 import random
+import torch
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 def train_gru_on_all(processed_dir: str, batch_size: int = None, epochs: int = None, lr: float = None):
     """
