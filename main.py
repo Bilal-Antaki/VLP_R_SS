@@ -1,10 +1,9 @@
-from src.data.feature_engineering import create_engineered_features, select_features
 from src.utils.visualizations import plot_actual_vs_estimated, plot_rmse_comparison
 from src.config import DATA_CONFIG, ANALYSIS_CONFIG, TRAINING_OPTIONS
 from src.training.train_sklearn import train_all_models_enhanced
 from src.training.train_lstm import train_lstm_on_all
 from src.training.train_gru import train_gru_on_all
-from src.training.train_rnn import train_rnn_on_all
+from src.training.train_cnn import train_cnn_on_all
 from src.data.data_loader import load_cir_data
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -52,7 +51,7 @@ def create_predictions_dataframe(model_results):
 
 
 def run_analysis():
-    """Run analysis with Linear, SVR, LSTM, GRU, and RNN models"""
+    """Run analysis with Linear, SVR, LSTM, GRU, and CNN models"""
     
     # Create results directory if it doesn't exist
     os.makedirs('results/models', exist_ok=True)
@@ -80,26 +79,13 @@ def run_analysis():
         print("No data found!")
         return
     
-    # Extract target column before feature engineering
+    # Extract target column and raw features
     y = df_all[DATA_CONFIG['target_column']]
     
-    # 2. Feature Engineering
-    df_engineered = create_engineered_features(df_all)
-    
-    # Select features - exclude any coordinate-based features
-    feature_cols = [col for col in df_engineered.columns 
-                   if col not in ANALYSIS_CONFIG['feature_selection']['excluded_features']]
-    
-    X = df_engineered[feature_cols]
-
-    # Select best features
-    selected_features = select_features(
-        X, y, 
-        method='correlation', 
-        threshold=ANALYSIS_CONFIG['feature_selection']['correlation_threshold']
-    )
-    print(f"  Selected {len(selected_features)} features from {len(feature_cols)} total")
-    print(f"  Top features: {selected_features[:10]}")
+    # Use raw PL and RMS features directly
+    X = df_all[['PL', 'RMS']]
+    print(f"  Using raw features: {list(X.columns)}")
+    print(f"  Features shape: {X.shape}")
     
     # 3. Train all models and collect results
     all_model_results = []
@@ -122,7 +108,7 @@ def run_analysis():
         )
     
     # Save LSTM model
-    lstm_save_path = f'results/models/lstm_model_{timestamp}_rmse_{lstm_results["rmse"]:.4f}.pth'
+    lstm_save_path = 'results/models/lstm_model.pth'
     torch.save({
         'model_type': 'lstm',
         'timestamp': timestamp,
@@ -169,7 +155,7 @@ def run_analysis():
         )
     
     # Save GRU model
-    gru_save_path = f'results/models/gru_model_{timestamp}_rmse_{gru_results["rmse"]:.4f}.pth'
+    gru_save_path = 'results/models/gru_model.pth'
     torch.save({
         'model_type': 'gru',
         'timestamp': timestamp,
@@ -202,62 +188,61 @@ def run_analysis():
         } if TRAINING_OPTIONS['plot_training_history'] else None
     })
     
-    # Train and save RNN model
-    rnn_results = train_rnn_on_all(DATA_CONFIG['processed_dir'])
+    # Train and save CNN model
+    cnn_results = train_cnn_on_all(DATA_CONFIG['processed_dir'])
     
-    # Plot RNN actual vs estimated
+    # Plot CNN actual vs estimated
     if TRAINING_OPTIONS['save_predictions']:
         plot_actual_vs_estimated(
-            np.array(rnn_results['r_actual']),
-            np.array(rnn_results['r_pred']),
-            model_name="RNN",
+            np.array(cnn_results['r_actual']),
+            np.array(cnn_results['r_pred']),
+            model_name="CNN",
             save_dir="results/plots"
         )
     
-    # Save RNN model
-    rnn_save_path = f'results/models/rnn_model_{timestamp}_rmse_{rnn_results["rmse"]:.4f}.pth'
+    # Save CNN model
+    cnn_save_path = 'results/models/cnn_model.pth'
     torch.save({
-        'model_type': 'rnn',
+        'model_type': 'cnn',
         'timestamp': timestamp,
-        'rmse': rnn_results['rmse'],
-        'train_loss': rnn_results['train_loss'],
-        'val_loss': rnn_results['val_loss'],
+        'rmse': cnn_results['rmse'],
+        'train_loss': cnn_results['train_loss'],
+        'val_loss': cnn_results['val_loss'],
         'predictions': {
-            'actual': rnn_results['r_actual'],
-            'predicted': rnn_results['r_pred']
+            'actual': cnn_results['r_actual'],
+            'predicted': cnn_results['r_pred']
         }
-    }, rnn_save_path)
+    }, cnn_save_path)
     
-    # Clear GPU memory after RNN
+    # Clear GPU memory after CNN
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     
     all_model_results.append({
-        'name': 'rnn',
-        'type': 'RNN',
+        'name': 'cnn',
+        'type': 'CNN',
         'metrics': {
-            'rmse': rnn_results['rmse']
+            'rmse': cnn_results['rmse']
         },
         'predictions': {
-            'y_test': rnn_results['r_actual'],
-            'y_pred': rnn_results['r_pred']
+            'y_test': cnn_results['r_actual'],
+            'y_pred': cnn_results['r_pred']
         } if TRAINING_OPTIONS['save_predictions'] else None,
         'training_history': {
-            'train_loss': rnn_results['train_loss'],
-            'val_loss': rnn_results['val_loss']
+            'train_loss': cnn_results['train_loss'],
+            'val_loss': cnn_results['val_loss']
         } if TRAINING_OPTIONS['plot_training_history'] else None
     })
     
     # Train sklearn models
     sklearn_results = train_all_models_enhanced(
-        DATA_CONFIG['processed_dir'],
-        include_slow_models=TRAINING_OPTIONS['include_slow_models']
+        DATA_CONFIG['processed_dir']
     )
     
     # Save sklearn models and plot actual vs estimated
     for result in sklearn_results:
         if result['success']:
-            model_save_path = f'results/models/{result["name"]}_model_{timestamp}_rmse_{result["metrics"]["rmse"]:.4f}.pkl'
+            model_save_path = f'results/models/{result["name"]}_model.pkl'
             pd.to_pickle({
                 'model_type': result['name'],
                 'timestamp': timestamp,
@@ -322,13 +307,6 @@ def create_analysis_figures(model_results, df_raw):
     axes[0].set_title('Model Performance by RMSE')
     axes[0].grid(True, alpha=ANALYSIS_CONFIG['visualization']['grid_alpha'])
     
-    # Color code bars by model type
-    for i, result in enumerate(model_results):
-        if result['type'] == 'RNN':
-            bars[i].set_color('red')
-        else:
-            bars[i].set_color('blue')
-    
     # Training History for models that have it
     axes[1].set_title('Training History')
     axes[1].set_xlabel('Epoch')
@@ -337,7 +315,7 @@ def create_analysis_figures(model_results, df_raw):
     axes[1].set_yscale('log')
     
     for result in model_results:
-        if result.get('training_history') and result['type'] == 'RNN':
+        if result.get('training_history') and result['type'] in ['RNN', 'CNN']:
             if 'train_loss' in result['training_history']:
                 axes[1].plot(
                     result['training_history']['train_loss'],

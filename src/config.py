@@ -2,43 +2,57 @@
 Configuration settings for the Position Estimation project
 """
 
-# Model Configuration
+# Model Configuration - Different parameters for each model type
 MODEL_CONFIG = {
-    'hidden_size': 256,        # Increased hidden size
-    'num_layers': 3,           # Increased number of layers
-    'dropout': 0.4,            # Increased dropout for better regularization
-    'sequence_length': 16,     # Increased sequence length for better temporal patterns
-    'batch_size': 64,          # Increased batch size for better training stability
-    'learning_rate': 0.001,    # Reduced learning rate for better convergence
-    'epochs': 200,             # Increased epochs with early stopping
-    'patience': 30             # Increased patience for early stopping
-}
-
-# GRU Model Configuration
-GRU_CONFIG = {
-    'hidden_dim': 64,        # Hidden dimension for GRU cells
-    'num_layers': 2,          # Number of GRU layers
-    'dropout': 0.3           # Dropout rate between layers
+    # GRU specific parameters
+    'gru': {
+        'hidden_size': 32,
+        'num_layers': 2,
+        'dropout': 0.4,
+        'learning_rate': 0.001,
+        'batch_size': 32,
+        'epochs': 300,
+        'patience': 30
+    },
+    # LSTM specific parameters
+    'lstm': {
+        'hidden_size': 64,
+        'num_layers': 2,
+        'dropout': 0.4,
+        'learning_rate': 0.001,
+        'batch_size': 32,
+        'epochs': 300,
+        'patience': 30
+    },
+    # CNN specific parameters - Updated to prevent constant predictions
+    'cnn': {
+        'hidden_size': 64,  # Increased from 32
+        'num_layers': 3,    # Increased from 2
+        'dropout': 0.4,     # Reduced from 0.5
+        'learning_rate': 0.001,  # Reduced from 0.0015
+        'batch_size': 32,   # Reduced from 48
+        'epochs': 300,      # Increased from 200
+        'patience': 25,     # Increased from 20
+        'kernel_size': 3,
+        'num_filters': 128, # Increased from 64
+        'weight_decay': 1e-5,  # Added for optimizer
+        'scheduler_patience': 10  # Added for LR scheduler
+    },
+    # Common parameters
+    'sequence_length': 10
 }
 
 # Training Configuration
 TRAINING_CONFIG = {
     'learning_rate': 0.001,
-    'batch_size': 8,
+    'batch_size': 32,
     'epochs': 300,
     'weight_decay': 1e-5,
     'validation_split': 0.2,
     'random_seed': 42
 }
 
-# Feature Engineering Configuration
-FEATURE_CONFIG = {
-    'correlation_threshold': 0.1,
-    'simulation_length': 10,
-    'base_features': ['PL', 'RMS']
-}
-
-# Data Processing Configuration
+# Data Configuration
 DATA_CONFIG = {
     'input_file': 'data/processed/FCPR-D1_CIR.csv',
     'target_column': 'r',
@@ -48,16 +62,12 @@ DATA_CONFIG = {
 
 # Analysis Configuration
 ANALYSIS_CONFIG = {
-    'feature_selection': {
-        'correlation_threshold': 0.3,
-        'excluded_features': ['r', 'X', 'Y']
-    },
     'visualization': {
         'figure_sizes': {
             'data_exploration': (12, 5),
             'model_comparison': (17, 6)
         },
-        'height_ratios': [1, 1],
+        'height_ratios': [1],
         'scatter_alpha': 0.6,
         'scatter_size': 20,
         'grid_alpha': 0.3
@@ -70,7 +80,6 @@ ANALYSIS_CONFIG = {
 
 # Model Training Options
 TRAINING_OPTIONS = {
-    'include_slow_models': True,  # Whether to include computationally intensive models
-    'save_predictions': True,      # Whether to save model predictions
-    'plot_training_history': True  # Whether to plot training history for applicable models
+    'save_predictions': True,
+    'plot_training_history': True
 }

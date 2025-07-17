@@ -1,35 +1,22 @@
 # src/models/model_registry.py
-from .linear import build_linear_model_simple
-from .svr import build_svr_model, build_svr_optimized
+from .linear import build_linear_model
+from .svr import build_svr_optimized
 from .lstm import build_lstm_model
-from .gru import build_gru_model, build_gru_with_attention, build_gru_bidirectional, build_gru_residual
-#from .lstm_2 import build_lstm_model_2
-
+from .gru import build_gru_model
+from .cnn import build_cnn_model
 
 MODEL_REGISTRY = {
     # Linear models
-    "linear": build_linear_model_simple,
+    "linear": build_linear_model,
     
     # SVR models
     "svr": build_svr_optimized,
-    "svr_rbf": lambda **kwargs: build_svr_model(kernel='rbf', **kwargs),
     
-    # RNN models
+    # Neural network models
     "lstm": build_lstm_model,
     "gru": build_gru_model,
-    "gru_attention": build_gru_with_attention,
-    "gru_bidirectional": build_gru_bidirectional,
-    "gru_residual": build_gru_residual,
-    #"lstm_2": build_lstm_model_2,
+    "cnn": build_cnn_model,
 }
-
-# Update the categories in list_available_models:
-categories = {
-    'Linear': ['linear'],
-    'SVM': ['svr'],
-    'RNN': ['lstm', 'gru', 'gru_attention', 'gru_bidirectional', 'gru_residual']
-}
-
 
 def get_model(name: str, **kwargs):
     """
@@ -54,7 +41,7 @@ def list_available_models():
     categories = {
         'Linear': ['linear'],
         'SVM': ['svr'],
-        'RNN': ['lstm']
+        'Neural Networks': ['lstm', 'gru', 'cnn']
     }
     
     print("Available Models by Category:")
